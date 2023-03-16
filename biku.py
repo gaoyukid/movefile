@@ -37,11 +37,13 @@ class Node(object):
     
     def random_names(self, recursive=False):
         filename = os.path.basename(self.value)
-        new_filename = generate_random_string(len(filename))
+        filefolder = os.path.dirname(self.value)
+        # only change dir name, leave file name alone
+        new_filename = generate_random_string(len(filename)) if self.is_dir else filename
         if self.parent:
             self.value = os.path.join(self.parent.value, new_filename)
         else:
-            self.value = new_filename
+            self.value = os.path.join(filefolder, new_filename)
         if recursive:
             for child in self.children:
                 child.random_names(recursive)
@@ -77,13 +79,12 @@ class Node(object):
             else:
                 # is a file, use random file name as content, but with IDENDIFIER as file name
                 file_content = os.path.basename(self.value)
-                file_path = os.path.dirname(self.value)
-                full_file_path = os.path.join(file_path, self.IDENTIFIER)
                 if dry_run:
-                    logging.info(f'to create {full_file_path}')
+                    logging.info(f'to create {self.value}')
                 else:
-                    with open(os.path.join(file_path, self.IDENTIFIER), 'w') as f:
+                    with open(self.value, 'w') as f:
                         f.write(file_content)
+                
             changed += 1
         except:
             error += 1
@@ -102,12 +103,10 @@ def main():
     parser = argparse.ArgumentParser('hello')
     parser.add_argument('-m', '--multiply', dest='multiply', type=int, default=1, help='multiply by number')
     parser.add_argument('-r', '--root', dest='root', type=str, help='root of the dir to flip')
-    parser.add_argument('-c', '--clean', dest='clean', action='store_true', help=f'to clean up')
     parser.add_argument('-d', '--dry-run', dest='dry_run', action='store_true', help=f'to dry run')
     args = parser.parse_args()
     multiply = args.multiply
     root_path = args.root
-    clean = args.clean
     dry_run = args.dry_run
     if not root_path:
         # use where the script is
@@ -120,18 +119,18 @@ def main():
     error = 0
 
     root_node = Node.get_folder_structure(root_path)
-    if clean:
-        root_node.clean()
-    else:
-        for i in range(multiply):
-            copy_root_node = root_node.deep_copy()
-            copy_root_node.random_names(recursive=True)
-            sub_total, sub_changed, sub_error = copy_root_node.safe_create_folder_structure(recursive=True, dry_run=dry_run)
-            total += sub_total
-            changed += sub_changed
-            error += sub_error
+    recorded_smear_roots = []
+    for i in range(multiply):
+        copy_root_node = root_node.deep_copy()
+        copy_root_node.random_names(recursive=True)
+        sub_total, sub_changed, sub_error = copy_root_node.safe_create_folder_structure(recursive=True, dry_run=dry_run)
+        total += sub_total
+        changed += sub_changed
+        error += sub_error
+        recorded_smear_roots.append(copy_root_node.value)
 
-    logging.info(f'operation {"clean" if clean else "smear"} complete, {changed} changed, {error} errors, {total} in total')
+    logging.info(f'operation smear complete, {changed} changed, {error} errors, {total} in total')
+    logging.info(f'smear root dirs are: {recorded_smear_roots}')
 
 
 if __name__ == '__main__':
