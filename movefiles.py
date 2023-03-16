@@ -8,7 +8,7 @@ import logging
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-default_suffix_types_str = ','.join(['mp4', 'avi', 'mkv', 'wmv'])
+default_suffix_types_str = ','.join(['mp4', 'avi', 'mkv', 'wmv','rm','rmvb'])
 
 
 
